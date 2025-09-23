@@ -1,0 +1,62 @@
+# .github/workflows/convert-fbx.yml
+
+name: Convert FBX to glb
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push events but only for the "main" branch
+  push:
+    branches: [ "main" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checks out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Downloads the FBX2glTF converter
+      - name: Download FBX2glTF
+        run: wget https://github.com/facebookincubator/FBX2glTF/releases/download/v0.9.7/FBX2glTF-linux-x64 -O FBX2glTF
+
+      # 3. Makes the downloaded file executable
+      - name: Make converter executable
+        run: chmod +x FBX2glTF
+
+      # 4. Run the conversion command
+      - name: Convert FBX to glb
+        run: |
+          # Get the short commit SHA
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          
+          # Run the converter with relative paths
+          # The ./ is important to ensure it runs the local executable
+          ./FBX2glTF --binary --draco --verbose \
+            --input sidekick_case.fbx \
+            --output sidekick_case_${SHORT_SHA}.glb
+            
+      # (Optional) 5. Upload the generated .glb file as an artifact
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: converted-model
+          # The path uses a wildcard to match the file with any commit ID
+          path: sidekick_case_*.glb
+# 6. Create a GitHub Release and upload the .glb file
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          # The name of the release. You can customize this.
+          name: "Model Release ${{ github.sha }}"
+          # The tag for the release. This creates a new tag for each run.
+          tag_name: build-${{ github.run_number }}-${{ github.sha }}
+          # A wildcard (*) is used to match the .glb file with the dynamic commit ID
+          files: sidekick_case_*.glb
+          # Marks the release as a pre-release to avoid cluttering your main releases page
+          prerelease: true
