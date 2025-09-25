@@ -54,8 +54,8 @@ jobs:
       # 8. Convert FBX to STL using 3dconvert.mjs
       - name: Convert FBX to STL
         run: |
-          git clone https://github.com/fxspeiser/3DPrintUtils
-          cd 3DPrintUtils/src
+          git clone https://github.com/meetsidekick/3DPrintUtils
+          cd 3DPrintUtils
           npm install
           node --experimental-specifier-resolution=node 3dconvert.mjs sidekick_case.fbx -t stl -o sidekick_case_${SHORT_SHA}.stl
           mv sidekick_case_*.stl ../..
