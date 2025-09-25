@@ -55,7 +55,7 @@ jobs:
       - name: Convert FBX to STL
         run: |
           git clone https://github.com/meetsidekick/3DPrintUtils
-          cd 3DPrintUtils
+          cd 3DPrintUtils/src
           npm install
           node --experimental-specifier-resolution=node 3dconvert.mjs sidekick_case.fbx -t stl -o sidekick_case_${SHORT_SHA}.stl
           mv sidekick_case_*.stl ../..
