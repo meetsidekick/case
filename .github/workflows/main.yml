@@ -1,6 +1,6 @@
 # .github/workflows/convert-fbx.yml
 
-name: Convert FBX to glb
+name: Convert FBX to glb and STL
 
 # Controls when the workflow will run
 on:
@@ -29,34 +29,53 @@ jobs:
       - name: Make converter executable
         run: chmod +x FBX2glTF
 
-      # 4. Run the conversion command
+      # 4. Get the short commit SHA for unique output naming
+      - name: Get short commit SHA
+        id: vars
+        run: echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
+      # 5. Convert FBX to glb
       - name: Convert FBX to glb
         run: |
-          # Get the short commit SHA
-          SHORT_SHA=$(git rev-parse --short HEAD)
-          
-          # Run the converter with relative paths
-          # The ./ is important to ensure it runs the local executable
           ./FBX2glTF --binary --draco --verbose \
             --input sidekick_case.fbx \
             --output sidekick_case_${SHORT_SHA}.glb
-            
-      # (Optional) 5. Upload the generated .glb file as an artifact
-      - name: Upload artifact
+
+      # 6. Setup Node.js for 3dconvert.mjs
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 7. Install dependencies if needed (update this if 3dconvert.mjs needs any packages)
+      # - name: Install Dependencies
+      #   run: npm ci
+
+      # 8. Convert FBX to STL using 3dconvert.mjs
+      - name: Convert FBX to STL
+        run: |
+          git clone https://github.com/fxspeiser/3DPrintUtils
+          cd 3DPrintUtils/src
+          npm install
+          node --experimental-specifier-resolution=node 3dconvert.mjs sidekick_case.fbx -t stl -o sidekick_case_${SHORT_SHA}.stl
+          mv sidekick_case_*.stl ../..
+
+      # 9. Upload the generated .glb and .stl files as artifacts
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: converted-model
-          # The path uses a wildcard to match the file with any commit ID
-          path: sidekick_case_*.glb
-# 6. Create a GitHub Release and upload the .glb file
+          name: converted-models
+          path: |
+            sidekick_case_*.glb
+            sidekick_case_*.stl
+
+      # 10. Create a GitHub Release and upload the files
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          # The name of the release. You can customize this.
           name: "Model Release ${{ github.sha }}"
-          # The tag for the release. This creates a new tag for each run.
           tag_name: build-${{ github.run_number }}-${{ github.sha }}
-          # A wildcard (*) is used to match the .glb file with the dynamic commit ID
-          files: sidekick_case_*.glb
-          # Marks the release as a pre-release to avoid cluttering your main releases page
+          files: |
+            sidekick_case_*.glb
+            sidekick_case_*.stl
           prerelease: true
