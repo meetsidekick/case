@@ -56,7 +56,7 @@ jobs:
         run: |
           git clone https://github.com/meetsidekick/3DPrintUtils
           cd 3DPrintUtils
-          npm install
+          npm install @loaders.gl/core @loaders.gl/gltf dom-urls fbx2gltf filereader gltf-js-utils three three-stl-loader yargs
           node --experimental-specifier-resolution=node src/3dconvert.mjs sidekick_case.fbx -t stl -o sidekick_case_${SHORT_SHA}.stl
           mv sidekick_case_*.stl ../..
 
